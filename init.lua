@@ -100,9 +100,7 @@ vim.g.have_nerd_font = false
 
 -- Make line numbers default
 vim.opt.number = true
--- You can also add relative line numbers, to help with jumping.
---  Experiment for yourself to see if you like it!
--- vim.opt.relativenumber = true
+vim.wo.relativenumber = true
 
 -- Enable mouse mode, can be useful for resizing splits for example!
 vim.opt.mouse = 'a'
@@ -154,6 +152,10 @@ vim.opt.cursorline = true
 -- Minimal number of screen lines to keep above and below the cursor.
 vim.opt.scrolloff = 10
 
+-- disable netrw at the very start of your init.lua
+vim.g.loaded_netrw = 1
+vim.g.loaded_netrwPlugin = 1
+
 -- [[ Basic Keymaps ]]
 --  See `:help vim.keymap.set()`
 
@@ -190,6 +192,19 @@ vim.keymap.set('n', '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right win
 vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
 vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
 
+-- My keymaps
+vim.keymap.set('n', '<C-d>', '<C-d>zz', { noremap = true })
+vim.keymap.set('n', '<C-u>', '<C-u>zz', { noremap = true })
+vim.keymap.set('n', 'n', 'nzzzv', { noremap = true })
+vim.keymap.set('n', 'N', 'Nzzzv', { noremap = true })
+
+-- TODO the two lines below not working!
+vim.keymap.set('v', '<leader>p', '"_dP', { noremap = true, desc = 'Paste without clearing copy register' })
+vim.keymap.set('n', '<leader>p', '"_dP', { noremap = true, desc = 'Paste without clearing copy register' })
+--
+
+vim.keymap.set('n', '<leader>cc', 'I//<Esc>', { noremap = true, desc = 'Comment out line' })
+
 -- [[ Basic Autocommands ]]
 --  See `:help lua-guide-autocommands`
 
@@ -213,6 +228,20 @@ if not vim.loop.fs_stat(lazypath) then
 end ---@diagnostic disable-next-line: undefined-field
 vim.opt.rtp:prepend(lazypath)
 
+-- [[ Copy path to current file ]]
+vim.api.nvim_create_user_command('Cppath', function()
+  local path = vim.fn.expand '%:p'
+  vim.fn.setreg('+', path)
+  vim.notify('Copied "' .. path .. '" to the clipboard!')
+end, {})
+
+local prettier = {
+  formatCommand = 'prettierd "${INPUT}"',
+  formatStdin = true,
+  env = {
+    string.format('PRETTIERD_DEFAULT_CONFIG=%s', vim.fn.expand '~/.config/nvim/utils/linter-config/.prettierrc.yaml'),
+  },
+}
 -- [[ Configure and install plugins ]]
 --
 --  To check the current status of your plugins, run
@@ -227,7 +256,7 @@ vim.opt.rtp:prepend(lazypath)
 require('lazy').setup({
   -- NOTE: Plugins can be added with a link (or for a github repo: 'owner/repo' link).
   'tpope/vim-sleuth', -- Detect tabstop and shiftwidth automatically
-
+  'sbdchd/neoformat',
   -- NOTE: Plugins can also be added by using a table,
   -- with the first argument being the link and the following
   -- keys can be used to configure plugin behavior/loading/etc.
@@ -325,7 +354,62 @@ require('lazy').setup({
       { 'nvim-telescope/telescope-ui-select.nvim' },
 
       -- Useful for getting pretty icons, but requires a Nerd Font.
-      { 'nvim-tree/nvim-web-devicons', enabled = vim.g.have_nerd_font },
+      {
+        'nvim-tree/nvim-web-devicons',
+        enabled = vim.g.have_nerd_font,
+        opts = {
+          -- your personnal icons can go here (to override)
+          -- you can specify color or cterm_color instead of specifying both of them
+          -- DevIcon will be appended to `name`
+          override = {
+            zsh = {
+              icon = '',
+              color = '#428850',
+              cterm_color = '65',
+              name = 'Zsh',
+            },
+          },
+          -- globally enable different highlight colors per icon (default to true)
+          -- if set to false all icons will have the default icon's color
+          color_icons = true,
+          -- globally enable default icons (default to false)
+          -- will get overriden by `get_icons` option
+          default = true,
+          -- globally enable "strict" selection of icons - icon will be looked up in
+          -- different tables, first by filename, and if not found by extension; this
+          -- prevents cases when file doesn't have any extension but still gets some icon
+          -- because its name happened to match some extension (default to false)
+          strict = true,
+          -- same as `override` but specifically for overrides by filename
+          -- takes effect when `strict` is true
+          override_by_filename = {
+            ['.gitignore'] = {
+              icon = '',
+              color = '#f1502f',
+              name = 'Gitignore',
+            },
+          },
+          -- same as `override` but specifically for overrides by extension
+          -- takes effect when `strict` is true
+          override_by_extension = {
+            ['log'] = {
+              icon = '',
+              color = '#81e043',
+              name = 'Log',
+            },
+          },
+        },
+      },
+      {
+        'nvim-telescope/telescope-live-grep-args.nvim',
+        -- This will not install any breaking changes.
+        -- For major updates, this must be adjusted manually.
+        version = '^1.0.0',
+      },
+      {
+        'nvim-telescope/telescope-file-browser.nvim',
+        dependencies = { 'nvim-lua/plenary.nvim' },
+      },
     },
     config = function()
       -- Telescope is a fuzzy finder that comes with a lot of different things that
@@ -369,6 +453,8 @@ require('lazy').setup({
       -- Enable Telescope extensions if they are installed
       pcall(require('telescope').load_extension, 'fzf')
       pcall(require('telescope').load_extension, 'ui-select')
+      pcall(require('telescope').load_extension, 'live_grep_args')
+      pcall(require('telescope').load_extension, 'telescope-file-browser')
 
       -- See `:help telescope.builtin`
       local builtin = require 'telescope.builtin'
@@ -378,10 +464,12 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>ss', builtin.builtin, { desc = '[S]earch [S]elect Telescope' })
       vim.keymap.set('n', '<leader>sw', builtin.grep_string, { desc = '[S]earch current [W]ord' })
       vim.keymap.set('n', '<leader>sg', builtin.live_grep, { desc = '[S]earch by [G]rep' })
+      vim.keymap.set('n', '<leader>fg', require('telescope').extensions.live_grep_args.live_grep_args, { desc = '[F]ind by [G]rep' })
       vim.keymap.set('n', '<leader>sd', builtin.diagnostics, { desc = '[S]earch [D]iagnostics' })
       vim.keymap.set('n', '<leader>sr', builtin.resume, { desc = '[S]earch [R]esume' })
-      vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = '[S]earch Recent Files ("." for repeat)' })
+      vim.keymap.set('n', '<leader>?', builtin.oldfiles, { desc = '[S]earch Recent Files' })
       vim.keymap.set('n', '<leader><leader>', builtin.buffers, { desc = '[ ] Find existing buffers' })
+      vim.keymap.set('n', '<space>fb', ':Telescope file_browser path=%:p:h select_buffer=true<CR>', { noremap = true })
 
       -- Slightly advanced example of overriding default behavior and theme
       vim.keymap.set('n', '<leader>/', function()
@@ -407,7 +495,25 @@ require('lazy').setup({
       end, { desc = '[S]earch [N]eovim files' })
     end,
   },
-
+  {
+    'nvim-telescope/telescope-file-browser.nvim',
+    dependencies = { 'nvim-telescope/telescope.nvim', 'nvim-lua/plenary.nvim', 'nvim-tree/nvim-web-devicons' },
+  },
+  {
+    'akinsho/git-conflict.nvim',
+    version = '*',
+    config = true,
+    opts = {
+      default_mappings = true, -- disable buffer local mapping created by this plugin
+      default_commands = true, -- disable commands created by this plugin
+      disable_diagnostics = false, -- This will disable the diagnostics in a buffer whilst it is conflicted
+      list_opener = 'copen', -- command or function to open the conflicts list
+      highlights = { -- They must have background color, otherwise the default color will be used
+        incoming = 'DiffAdd',
+        current = 'DiffText',
+      },
+    },
+  },
   { -- LSP Configuration & Plugins
     'neovim/nvim-lspconfig',
     dependencies = {
@@ -592,6 +698,49 @@ require('lazy').setup({
             },
           },
         },
+        gopls = {
+          filetypes = { 'go', 'gomod', 'gowork', 'gotmpl' },
+          rootMarkers = {
+            'go.work',
+            'go.mod',
+            '.git',
+          },
+          gopls = {
+            completeUnimported = true,
+            usePlaceholders = true,
+            analysys = {
+              unusedparam = true,
+            },
+          },
+        },
+        rust_analyzer = { filetypes = { 'rs' } },
+        tsserver = {
+          filetypes = { 'typescript', 'typescriptreact', 'javascript', 'javascriptreact' },
+        },
+        html = { filetypes = { 'html', 'twig', 'hbs' } },
+        kotlin_language_server = {},
+        efm = {
+          filetypes = { 'ts', 'tsx', 'lua' },
+          init_options = { documentFormatting = true },
+          settings = {
+            rootMarkers = { '.git/' },
+            languages = {
+              lua = {
+                { formatCommand = 'lua-format -i', formatStdin = true },
+              },
+              typescript = prettier,
+            },
+          },
+        },
+        cssls = {
+          filetypes = { 'css', 'scss', 'les' },
+        },
+        tailwindcss = {
+          filetypes = { 'css', 'scss', 'less', 'javascriptreact', 'typescriptreact' },
+        },
+        htmx = {
+          filetypes = { 'html', 'go', 'templ' },
+        },
       }
 
       -- Ensure the servers and tools above are installed
@@ -657,7 +806,9 @@ require('lazy').setup({
         --
         -- You can use a sub-list to tell conform to run *until* a formatter
         -- is found.
-        -- javascript = { { "prettierd", "prettier" } },
+        javascript = { { 'prettierd', 'prettier' } },
+        typescript = { { 'prettierd', 'prettier' } },
+        typescriptreact = { { 'prettierd', 'prettier' } },
       },
     },
   },
@@ -717,6 +868,7 @@ require('lazy').setup({
         --
         -- No, but seriously. Please read `:help ins-completion`, it is really good!
         mapping = cmp.mapping.preset.insert {
+          ['<CR>'] = cmp.mapping.confirm(),
           -- Select the [n]ext item
           ['<C-n>'] = cmp.mapping.select_next_item(),
           -- Select the [p]revious item
@@ -772,25 +924,118 @@ require('lazy').setup({
       }
     end,
   },
-
-  { -- You can easily change to a different colorscheme.
-    -- Change the name of the colorscheme plugin below, and then
-    -- change the command in the config to whatever the name of that colorscheme is.
-    --
-    -- If you want to see what colorschemes are already installed, you can use `:Telescope colorscheme`.
-    'folke/tokyonight.nvim',
-    priority = 1000, -- Make sure to load this before all the other start plugins.
-    init = function()
-      -- Load the colorscheme here.
-      -- Like many other themes, this one has different styles, and you could load
-      -- any other, such as 'tokyonight-storm', 'tokyonight-moon', or 'tokyonight-day'.
-      vim.cmd.colorscheme 'tokyonight-night'
-
-      -- You can configure highlights by doing something like:
-      vim.cmd.hi 'Comment gui=none'
+  {
+    'catppuccin/nvim',
+    name = 'catppuccin',
+    priority = 1000,
+    opts = {
+      flavour = 'macchiato', -- latte, frappe, macchiato, mocha
+      background = { -- :h background
+        light = 'latte',
+        dark = 'macchiato',
+      },
+      dim_inactive = {
+        enabled = true, -- dims the background color of inactive window
+        shade = 'dark',
+        percentage = 0.15, -- percentage of the shade to apply to the inactive window
+      },
+      integrations = {
+        cmp = true,
+        gitsigns = true,
+        nvimtree = true,
+        treesitter = true,
+        notify = false,
+        mini = {
+          enabled = true,
+          indentscope_color = '',
+        },
+        telescope = {
+          enabled = true,
+        },
+        indent_blankline = {
+          enabled = true,
+          scope_color = 'lavender', -- catppuccin color (eg. `lavender`) Default: text
+          colored_indent_levels = false,
+        },
+        neotree = true,
+        -- For more plugins integrations please scroll down (https://github.com/catppuccin/nvim#integrations)
+      },
+    },
+    config = function()
+      -- setup must be called before loading
+      vim.cmd.colorscheme 'catppuccin'
     end,
   },
+  {
+    -- Set lualine as statusline
+    'nvim-lualine/lualine.nvim',
+    -- See `:help lualine.txt`
+    opts = {
+      options = {
+        theme = 'catppuccin',
+        icons_enabled = true,
+        component_separators = '|',
+        section_separators = '',
+      },
+      sections = {
+        lualine_a = { 'mode' },
+        lualine_b = { 'branch' },
+        lualine_c = {
+          {
+            'filename',
+            file_status = true, -- displays file status (readonly status, modified status)
+            path = 1, -- 0 = just filename, 1 = relative path, 2 = absolute path
+          },
+        },
+        lualine_x = {
+          {
+            'diagnostics',
+            sources = { 'nvim_diagnostic' },
+            symbols = {
+              error = ' ',
+              warn = ' ',
+              info = ' ',
+              hint = ' ',
+            },
+          },
+          'encoding',
+          'filetype',
+        },
+        lualine_y = { 'progress' },
+        lualine_z = { 'location' },
+      },
+    },
+  },
+  {
+    -- Add indentation guides even on blank lines
+    'lukas-reineke/indent-blankline.nvim',
+    -- Enable `lukas-reineke/indent-blankline.nvim`
+    -- See `:help indent_blankline.txt`
+    version = '2.20.8',
+    opts = {
+      char = '┊',
+      show_trailing_blankline_indent = false,
+      show_current_context = true,
+      show_current_context_start = true,
+    },
+  },
+  -- { -- You can easily change to a different colorscheme.
+  --   -- Change the name of the colorscheme plugin below, and then
+  --   -- change the command in the config to whatever the name of that colorscheme is.
+  --   --
+  --   -- If you want to see what colorschemes are already installed, you can use `:Telescope colorscheme`.
+  --   'folke/tokyonight.nvim',
+  --   priority = 1000, -- Make sure to load this before all the other start plugins.
+  --   init = function()
+  --     -- Load the colorscheme here.
+  --     -- Like many other themes, this one has different styles, and you could load
+  --     -- any other, such as 'tokyonight-storm', 'tokyonight-moon', or 'tokyonight-day'.
+  --     vim.cmd.colorscheme 'tokyonight-night'
 
+  --     -- You can configure highlights by doing something like:
+  --     vim.cmd.hi 'Comment gui=none'
+  --   end,
+  -- },
   -- Highlight todo, notes, etc in comments
   { 'folke/todo-comments.nvim', event = 'VimEnter', dependencies = { 'nvim-lua/plenary.nvim' }, opts = { signs = false } },
 
@@ -835,7 +1080,7 @@ require('lazy').setup({
     'nvim-treesitter/nvim-treesitter',
     build = ':TSUpdate',
     opts = {
-      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'vim', 'vimdoc' },
+      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'vim', 'vimdoc', 'go', 'rust', 'toml', 'tsx', 'typescript' },
       -- Autoinstall languages that are not installed
       auto_install = true,
       highlight = {
@@ -852,6 +1097,7 @@ require('lazy').setup({
 
       -- Prefer git instead of curl in order to improve connectivity in some environments
       require('nvim-treesitter.install').prefer_git = true
+
       ---@diagnostic disable-next-line: missing-fields
       require('nvim-treesitter.configs').setup(opts)
 
@@ -876,7 +1122,11 @@ require('lazy').setup({
   -- require 'kickstart.plugins.debug',
   -- require 'kickstart.plugins.indent_line',
   -- require 'kickstart.plugins.lint',
-  -- require 'kickstart.plugins.autopairs',
+  require 'kickstart.plugins.autopairs',
+  {
+    'windwp/nvim-ts-autotag',
+    opts = {},
+  },
   -- require 'kickstart.plugins.neo-tree',
   -- require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
 
