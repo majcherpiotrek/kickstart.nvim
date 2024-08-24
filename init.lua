@@ -91,7 +91,7 @@ vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
 -- Set to true if you have a Nerd Font installed and selected in the terminal
-vim.g.have_nerd_font = false
+vim.g.have_nerd_font = true
 
 -- [[ Setting options ]]
 -- See `:help vim.opt`
@@ -153,8 +153,8 @@ vim.opt.cursorline = true
 vim.opt.scrolloff = 10
 
 -- disable netrw at the very start of your init.lua
-vim.g.loaded_netrw = 1
-vim.g.loaded_netrwPlugin = 1
+vim.g.loaded_netrw = 0
+vim.g.loaded_netrwPlugin = 0
 
 -- [[ Basic Keymaps ]]
 --  See `:help vim.keymap.set()`
@@ -178,35 +178,10 @@ vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagn
 vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
 
 -- TIP: Disable arrow keys in normal mode
--- vim.keymap.set('n', '<left>', '<cmd>echo "Use h to move!!"<CR>')
--- vim.keymap.set('n', '<right>', '<cmd>echo "Use l to move!!"<CR>')
--- vim.keymap.set('n', '<up>', '<cmd>echo "Use k to move!!"<CR>')
--- vim.keymap.set('n', '<down>', '<cmd>echo "Use j to move!!"<CR>')
-
--- Keybinds to make split navigation easier.
---  Use CTRL+<hjkl> to switch between windows
---
---  See `:help wincmd` for a list of all window commands
---vim.keymap.set('n', '<C-h>', '<C-w><C-h>', { desc = 'Move focus to the left window' })
---vim.keymap.set('n', '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right window' })
---vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
---vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
---
--- My keymaps
-vim.keymap.set('n', '<C-d>', '<C-d>zz', { noremap = true })
-vim.keymap.set('n', '<C-u>', '<C-u>zz', { noremap = true })
-vim.keymap.set('n', 'n', 'nzzzv', { noremap = true })
-vim.keymap.set('n', 'N', 'Nzzzv', { noremap = true })
-
-vim.keymap.set('n', '<C-p>', vim.lsp.buf.signature_help, { noremap = true })
-vim.keymap.set('i', '<C-p>', vim.lsp.buf.signature_help, { noremap = true })
-
--- TODO the two lines below not working!
-vim.keymap.set('v', '<leader>p', '"_dP', { noremap = true, desc = 'Paste without clearing copy register' })
-vim.keymap.set('n', '<leader>p', '"_dP', { noremap = true, desc = 'Paste without clearing copy register' })
---
-
-vim.keymap.set('n', '<leader>cc', 'I//<Esc>', { noremap = true, desc = 'Comment out line' })
+vim.keymap.set('n', '<left>', '<cmd>echo "Use h to move!!"<CR>')
+vim.keymap.set('n', '<right>', '<cmd>echo "Use l to move!!"<CR>')
+vim.keymap.set('n', '<up>', '<cmd>echo "Use k to move!!"<CR>')
+vim.keymap.set('n', '<down>', '<cmd>echo "Use j to move!!"<CR>')
 
 -- [[ Basic Autocommands ]]
 --  See `:help lua-guide-autocommands`
@@ -219,13 +194,6 @@ vim.api.nvim_create_autocmd('TextYankPost', {
   group = vim.api.nvim_create_augroup('kickstart-highlight-yank', { clear = true }),
   callback = function()
     vim.highlight.on_yank()
-  end,
-})
-
-vim.api.nvim_create_autocmd('BufEnter', {
-  pattern = '*.templ',
-  callback = function()
-    vim.cmd 'TSBufEnable highlight'
   end,
 })
 
@@ -252,6 +220,7 @@ local prettier = {
     string.format('PRETTIERD_DEFAULT_CONFIG=%s', vim.fn.expand '~/.config/nvim/utils/linter-config/.prettierrc.yaml'),
   },
 }
+
 -- [[ Configure and install plugins ]]
 --
 --  To check the current status of your plugins, run
@@ -275,9 +244,45 @@ require('lazy').setup({
   --  This is equivalent to:
   --    require('Comment').setup({})
 
-  -- "gc" to comment visual regions/lines
-  { 'numToStr/Comment.nvim', opts = {} },
-
+  {
+    'numToStr/Comment.nvim',
+    opts = {},
+    --
+    -- Normal mode
+    --
+    -- `gcc` - Toggles the current line using linewise comment
+    -- `gbc` - Toggles the current line using blockwise comment
+    -- `[count]gcc` - Toggles the number of line given as a prefix-count using linewise
+    -- `[count]gbc` - Toggles the number of line given as a prefix-count using blockwise
+    -- `gc[count]{motion}` - (Op-pending) Toggles the region using linewise comment
+    -- `gb[count]{motion}` - (Op-pending) Toggles the region using blockwise comment
+    --
+    -- `gco` - Insert comment to the next line and enters INSERT mode
+    -- `gcO` - Insert comment to the previous line and enters INSERT mode
+    -- `gcA` - Insert comment to end of the current line and enters INSERT mode
+    --
+    -- Visual mode
+    --
+    -- `gc` - Toggles the region using linewise comment
+    -- `gb` - Toggles the region using blockwise comment
+    --
+    -- Examples
+    --
+    -- # Linewise
+    -- `gcw` - Toggle from the current cursor position to the next word
+    -- `gc$` - Toggle from the current cursor position to the end of line
+    -- `gc}` - Toggle until the next blank line
+    -- `gc5j` - Toggle 5 lines after the current cursor position
+    -- `gc8k` - Toggle 8 lines before the current cursor position
+    -- `gcip` - Toggle inside of paragraph
+    -- `gca}` - Toggle around curly brackets
+    --
+    -- # Blockwise
+    --
+    -- `gb2}` - Toggle until the 2 next blank line
+    -- `gbaf` - Toggle comment around a function (w/ LSP/treesitter support)
+    -- `gbac` - Toggle comment around a class (w/ LSP/treesitter support)
+  },
   -- Here is a more advanced example where we pass configuration
   -- options to `gitsigns.nvim`. This is equivalent to the following Lua:
   --    require('gitsigns').setup({ ... })
@@ -507,21 +512,6 @@ require('lazy').setup({
   {
     'nvim-telescope/telescope-file-browser.nvim',
     dependencies = { 'nvim-telescope/telescope.nvim', 'nvim-lua/plenary.nvim', 'nvim-tree/nvim-web-devicons' },
-  },
-  {
-    'akinsho/git-conflict.nvim',
-    version = '*',
-    config = true,
-    opts = {
-      default_mappings = true, -- disable buffer local mapping created by this plugin
-      default_commands = true, -- disable commands created by this plugin
-      disable_diagnostics = false, -- This will disable the diagnostics in a buffer whilst it is conflicted
-      list_opener = 'copen', -- command or function to open the conflicts list
-      highlights = { -- They must have background color, otherwise the default color will be used
-        incoming = 'DiffAdd',
-        current = 'DiffText',
-      },
-    },
   },
   { -- LSP Configuration & Plugins
     'neovim/nvim-lspconfig',
@@ -784,7 +774,6 @@ require('lazy').setup({
       }
     end,
   },
-
   { -- Autoformat
     'stevearc/conform.nvim',
     lazy = false,
@@ -1149,10 +1138,6 @@ require('lazy').setup({
     end,
   },
 
-  -- The following two comments only work if you have downloaded the kickstart repo, not just copy pasted the
-  -- init.lua. If you want these files, they are in the repository, so you can just download them and
-  -- place them in the correct locations.
-
   -- NOTE: Next step on your Neovim journey: Add/Configure additional plugins for Kickstart
   --
   --  Here are some example plugins that I've included in the Kickstart repository.
@@ -1162,39 +1147,10 @@ require('lazy').setup({
   -- require 'kickstart.plugins.indent_line',
   -- require 'kickstart.plugins.lint',
   require 'kickstart.plugins.autopairs',
-  {
-    'windwp/nvim-ts-autotag',
-    opts = {},
-  },
   -- require 'kickstart.plugins.neo-tree',
   -- require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
 
-  -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
-  --    This is the easiest way to modularize your config.
-  --
-  --  Uncomment the following line and add your plugins to `lua/custom/plugins/*.lua` to get going.
-  --    For additional information, see `:help lazy.nvim-lazy.nvim-structuring-your-plugins`
-  -- { import = 'custom.plugins' },
-  {
-    'christoomey/vim-tmux-navigator',
-    cmd = {
-      'TmuxNavigateLeft',
-      'TmuxNavigateDown',
-      'TmuxNavigateUp',
-      'TmuxNavigateRight',
-      'TmuxNavigatePrevious',
-    },
-    keys = {
-      { '<c-h>', '<cmd><C-U>TmuxNavigateLeft<cr>' },
-      { '<c-j>', '<cmd><C-U>TmuxNavigateDown<cr>' },
-      { '<c-k>', '<cmd><C-U>TmuxNavigateUp<cr>' },
-      { '<c-l>', '<cmd><C-U>TmuxNavigateRight<cr>' },
-      { '<c-\\>', '<cmd><C-U>TmuxNavigatePrevious<cr>' },
-    },
-  },
-  {
-    'mfussenegger/nvim-jdtls',
-  },
+  { import = 'custom.plugins' },
 }, {
   ui = {
     -- If you are using a Nerd Font: set icons to an empty table which will use the
