@@ -187,16 +187,19 @@ vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' }
 --  Use CTRL+<hjkl> to switch between windows
 --
 --  See `:help wincmd` for a list of all window commands
-vim.keymap.set('n', '<C-h>', '<C-w><C-h>', { desc = 'Move focus to the left window' })
-vim.keymap.set('n', '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right window' })
-vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
-vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
-
+--vim.keymap.set('n', '<C-h>', '<C-w><C-h>', { desc = 'Move focus to the left window' })
+--vim.keymap.set('n', '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right window' })
+--vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
+--vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
+--
 -- My keymaps
 vim.keymap.set('n', '<C-d>', '<C-d>zz', { noremap = true })
 vim.keymap.set('n', '<C-u>', '<C-u>zz', { noremap = true })
 vim.keymap.set('n', 'n', 'nzzzv', { noremap = true })
 vim.keymap.set('n', 'N', 'Nzzzv', { noremap = true })
+
+vim.keymap.set('n', '<C-p>', vim.lsp.buf.signature_help, { noremap = true })
+vim.keymap.set('i', '<C-p>', vim.lsp.buf.signature_help, { noremap = true })
 
 -- TODO the two lines below not working!
 vim.keymap.set('v', '<leader>p', '"_dP', { noremap = true, desc = 'Paste without clearing copy register' })
@@ -216,6 +219,13 @@ vim.api.nvim_create_autocmd('TextYankPost', {
   group = vim.api.nvim_create_augroup('kickstart-highlight-yank', { clear = true }),
   callback = function()
     vim.highlight.on_yank()
+  end,
+})
+
+vim.api.nvim_create_autocmd('BufEnter', {
+  pattern = '*.templ',
+  callback = function()
+    vim.cmd 'TSBufEnable highlight'
   end,
 })
 
@@ -256,7 +266,6 @@ local prettier = {
 require('lazy').setup({
   -- NOTE: Plugins can be added with a link (or for a github repo: 'owner/repo' link).
   'tpope/vim-sleuth', -- Detect tabstop and shiftwidth automatically
-  'sbdchd/neoformat',
   -- NOTE: Plugins can also be added by using a table,
   -- with the first argument being the link and the following
   -- keys can be used to configure plugin behavior/loading/etc.
@@ -699,7 +708,7 @@ require('lazy').setup({
           },
         },
         gopls = {
-          filetypes = { 'go', 'gomod', 'gowork', 'gotmpl' },
+          filetypes = { 'go', 'gomod', 'gowork', 'gotmpl', 'templ' },
           rootMarkers = {
             'go.work',
             'go.mod',
@@ -717,8 +726,9 @@ require('lazy').setup({
         tsserver = {
           filetypes = { 'typescript', 'typescriptreact', 'javascript', 'javascriptreact' },
         },
-        html = { filetypes = { 'html', 'twig', 'hbs' } },
+        html = { filetypes = { 'html', 'twig', 'hbs', 'templ' } },
         kotlin_language_server = {},
+        jdtls = { filetypes = { 'java', 'kotlin' } },
         efm = {
           filetypes = { 'ts', 'tsx', 'lua' },
           init_options = { documentFormatting = true },
@@ -736,7 +746,8 @@ require('lazy').setup({
           filetypes = { 'css', 'scss', 'les' },
         },
         tailwindcss = {
-          filetypes = { 'css', 'scss', 'less', 'javascriptreact', 'typescriptreact' },
+          filetypes = { 'css', 'scss', 'less', 'javascriptreact', 'typescriptreact', 'templ' },
+          init_options = { userLanguages = { templ = 'html' } },
         },
         htmx = {
           filetypes = { 'html', 'go', 'templ' },
@@ -779,12 +790,12 @@ require('lazy').setup({
     lazy = false,
     keys = {
       {
-        '<leader>f',
+        '<leader>ft',
         function()
           require('conform').format { async = true, lsp_fallback = true }
         end,
         mode = '',
-        desc = '[F]ormat buffer',
+        desc = '[F]orma[t] buffer',
       },
     },
     opts = {
@@ -793,7 +804,7 @@ require('lazy').setup({
         -- Disable "format_on_save lsp_fallback" for languages that don't
         -- have a well standardized coding style. You can add additional
         -- languages here or re-enable it for the disabled ones.
-        local disable_filetypes = { c = true, cpp = true }
+        local disable_filetypes = { c = true, cpp = true, kotlin = true }
         return {
           timeout_ms = 500,
           lsp_fallback = not disable_filetypes[vim.bo[bufnr].filetype],
@@ -809,6 +820,7 @@ require('lazy').setup({
         javascript = { { 'prettierd', 'prettier' } },
         typescript = { { 'prettierd', 'prettier' } },
         typescriptreact = { { 'prettierd', 'prettier' } },
+        templ = { { 'templ' } },
       },
     },
   },
@@ -1080,7 +1092,24 @@ require('lazy').setup({
     'nvim-treesitter/nvim-treesitter',
     build = ':TSUpdate',
     opts = {
-      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'vim', 'vimdoc', 'go', 'rust', 'toml', 'tsx', 'typescript' },
+      ensure_installed = {
+        'bash',
+        'c',
+        'diff',
+        'html',
+        'lua',
+        'luadoc',
+        'markdown',
+        'vim',
+        'vimdoc',
+        'go',
+        'rust',
+        'toml',
+        'tsx',
+        'typescript',
+        'kotlin',
+        'java',
+      },
       -- Autoinstall languages that are not installed
       auto_install = true,
       highlight = {
@@ -1099,7 +1128,17 @@ require('lazy').setup({
       require('nvim-treesitter.install').prefer_git = true
 
       ---@diagnostic disable-next-line: missing-fields
-      require('nvim-treesitter.configs').setup(opts)
+      require('nvim-treesitter.configs').setup {
+        incremental_selection = {
+          enable = true,
+          keymaps = {
+            init_selection = 'gnn',
+            node_incremental = 'grn',
+            scope_incremental = 'grc',
+            node_decremental = 'grm',
+          },
+        },
+      }
 
       -- There are additional nvim-treesitter modules that you can use to interact
       -- with nvim-treesitter. You should go explore a few and see what interests you:
@@ -1136,6 +1175,26 @@ require('lazy').setup({
   --  Uncomment the following line and add your plugins to `lua/custom/plugins/*.lua` to get going.
   --    For additional information, see `:help lazy.nvim-lazy.nvim-structuring-your-plugins`
   -- { import = 'custom.plugins' },
+  {
+    'christoomey/vim-tmux-navigator',
+    cmd = {
+      'TmuxNavigateLeft',
+      'TmuxNavigateDown',
+      'TmuxNavigateUp',
+      'TmuxNavigateRight',
+      'TmuxNavigatePrevious',
+    },
+    keys = {
+      { '<c-h>', '<cmd><C-U>TmuxNavigateLeft<cr>' },
+      { '<c-j>', '<cmd><C-U>TmuxNavigateDown<cr>' },
+      { '<c-k>', '<cmd><C-U>TmuxNavigateUp<cr>' },
+      { '<c-l>', '<cmd><C-U>TmuxNavigateRight<cr>' },
+      { '<c-\\>', '<cmd><C-U>TmuxNavigatePrevious<cr>' },
+    },
+  },
+  {
+    'mfussenegger/nvim-jdtls',
+  },
 }, {
   ui = {
     -- If you are using a Nerd Font: set icons to an empty table which will use the
