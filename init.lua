@@ -93,6 +93,9 @@ vim.g.maplocalleader = ' '
 -- Set to true if you have a Nerd Font installed and selected in the terminal
 vim.g.have_nerd_font = true
 
+vim.g.markdown_fenced_languages = {
+  'ts=typescript',
+}
 -- [[ Setting options ]]
 -- See `:help vim.opt`
 -- NOTE: You can change these options as you wish!
@@ -715,6 +718,19 @@ require('lazy').setup({
         rust_analyzer = { filetypes = { 'rs' } },
         tsserver = {
           filetypes = { 'typescript', 'typescriptreact', 'javascript', 'javascriptreact' },
+          root_dir = function(filename)
+            local lspconfig = require 'lspconfig'
+            local denoRootDir = lspconfig.util.root_pattern('deno.json', 'deno.json')(filename)
+            if denoRootDir then
+              -- print('this seems to be a deno project; returning nil so that tsserver does not attach');
+              return nil
+              -- else
+              -- print('this seems to be a ts project; return root dir based on package.json')
+            end
+
+            return lspconfig.util.root_pattern 'package.json'(filename)
+          end,
+          single_file_support = false,
         },
         html = { filetypes = { 'html', 'twig', 'hbs', 'templ' } },
         kotlin_language_server = {},
@@ -741,6 +757,20 @@ require('lazy').setup({
         },
         htmx = {
           filetypes = { 'html', 'go', 'templ' },
+        },
+        denols = {
+          root_dir = function(filename)
+            local lspconfig = require 'lspconfig'
+            local denoRootDir = lspconfig.util.root_pattern('deno.json', 'deno.json')(filename)
+            if denoRootDir then
+              -- print('this seems to be a deno project; returning nil so that tsserver does not attach');
+              return denoRootDir
+              -- else
+              -- print('this seems to be a ts project; return root dir based on package.json')
+            end
+
+            return nil
+          end,
         },
       }
 
@@ -809,6 +839,7 @@ require('lazy').setup({
         javascript = { { 'prettierd', 'prettier' } },
         typescript = { { 'prettierd', 'prettier' } },
         typescriptreact = { { 'prettierd', 'prettier' } },
+        json = { { 'prettierd', 'prettier' } },
         templ = { { 'templ' } },
       },
     },
