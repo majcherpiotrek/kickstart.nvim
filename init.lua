@@ -244,7 +244,10 @@ require('lazy').setup({
     opts = {
       -- add any opts here
       -- for example
-      provider = 'claude',
+      provider = 'gemini',
+      gemini = {
+        model = 'gemini-2.5-pro-preview-03-25',
+      },
     },
     -- if you want to build from source then do `make BUILD_FROM_SOURCE=true`
     build = 'make',
@@ -1233,6 +1236,21 @@ require('lazy').setup({
   -- require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
 
   { import = 'custom.plugins' },
+
+  -- Markdown Rendering
+  {
+    'MeanderingProgrammer/render-markdown.nvim',
+    -- Make sure to set this up properly if you have lazy=true
+    -- render-markdown.nvim does not support lazy loading
+    -- https://github.com/MeanderingProgrammer/render-markdown.nvim?tab=readme-ov-file#lazy-loading
+    lazy = false,
+    dependencies = { 'nvim-treesitter/nvim-treesitter', 'nvim-tree/nvim-web-devicons' }, -- if you enable the highlight_code_blocks option
+    opts = {
+      -- Configure the filetypes to render markdown in.
+      filetypes = { 'markdown' },
+    },
+    ft = { 'markdown' }, -- Load only for markdown files
+  },
 }, {
   ui = {
     -- If you are using a Nerd Font: set icons to an empty table which will use the
