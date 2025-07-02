@@ -32,7 +32,7 @@ Uses **lazy.nvim** as the plugin manager. Plugins are configured inline within t
 - **Lua**: lua_ls with kickstart-specific settings
 - **Go**: gopls with templ file support
 - **Rust**: rust_analyzer
-- **TypeScript/JavaScript**: tsserver (with Deno detection logic)
+- **TypeScript/JavaScript**: ts_ls (with Deno detection logic)
 - **HTML**: html with templ support
 - **CSS**: cssls, tailwindcss
 - **Java/Kotlin**: jdtls, kotlin_language_server
@@ -60,7 +60,7 @@ Uses **lazy.nvim** as the plugin manager. Plugins are configured inline within t
 
 ### Special Configurations
 - **Templ Support**: Go template files (*.templ) with proper LSP and syntax highlighting
-- **TypeScript/Deno Detection**: Automatic switching between tsserver and denols based on project type
+- **TypeScript/Deno Detection**: Automatic switching between ts_ls and denols based on project type
 - **Prettier Config**: Uses custom prettier config from `utils/linter-config/.prettierrc.yaml`
 
 ## Development Workflow

@@ -720,13 +720,13 @@ require('lazy').setup({
           },
         },
         rust_analyzer = { filetypes = { 'rs' } },
-        tsserver = {
+        ts_ls = {
           filetypes = { 'typescript', 'typescriptreact', 'javascript', 'javascriptreact' },
           root_dir = function(filename)
             local lspconfig = require 'lspconfig'
             local denoRootDir = lspconfig.util.root_pattern('deno.json', 'deno.json')(filename)
             if denoRootDir then
-              -- print('this seems to be a deno project; returning nil so that tsserver does not attach');
+              -- print('this seems to be a deno project; returning nil so that ts_ls does not attach');
               return nil
               -- else
               -- print('this seems to be a ts project; return root dir based on package.json')
