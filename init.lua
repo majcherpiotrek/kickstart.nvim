@@ -97,8 +97,6 @@ vim.g.markdown_fenced_languages = {
   'ts=typescript',
 }
 
-vim.g.augment_workspace_folders = { vim.fn.getcwd() }
-
 -- [[ Setting options ]]
 -- See `:help vim.opt`
 -- NOTE: You can change these options as you wish!
@@ -188,7 +186,6 @@ vim.keymap.set('n', '<left>', '<cmd>echo "Use h to move!!"<CR>')
 vim.keymap.set('n', '<right>', '<cmd>echo "Use l to move!!"<CR>')
 vim.keymap.set('n', '<up>', '<cmd>echo "Use k to move!!"<CR>')
 vim.keymap.set('n', '<down>', '<cmd>echo "Use j to move!!"<CR>')
-
 
 -- [[ Basic Autocommands ]]
 --  See `:help lua-guide-autocommands`
@@ -722,19 +719,20 @@ require('lazy').setup({
         rust_analyzer = { filetypes = { 'rs' } },
         ts_ls = {
           filetypes = { 'typescript', 'typescriptreact', 'javascript', 'javascriptreact' },
-          root_dir = function(filename)
-            local lspconfig = require 'lspconfig'
-            local denoRootDir = lspconfig.util.root_pattern('deno.json', 'deno.json')(filename)
-            if denoRootDir then
-              -- print('this seems to be a deno project; returning nil so that ts_ls does not attach');
-              return nil
-              -- else
-              -- print('this seems to be a ts project; return root dir based on package.json')
-            end
-
-            return lspconfig.util.root_pattern 'package.json'(filename)
-          end,
-          single_file_support = false,
+          -- root_dir = function(filename)
+          --   local lspconfig = require 'lspconfig'
+          --   local denoRootDir = lspconfig.util.root_pattern('deno.json', 'deno.json')(filename)
+          --   if denoRootDir then
+          --     print('ts_ls: this seems to be a deno project; returning nil so that ts_ls does not attach', denoRootDir)
+          --     return nil
+          --   else
+          --     local tsRootDir = lspconfig.util.root_pattern('package.json', 'tsconfig.json', 'jsconfig.json')(filename)
+          --
+          --     print('ts_ls: this seems to be a ts project; return root dir based on package.json', tsRootDir)
+          --     return tsRootDir
+          --   end
+          -- end,
+          single_file_support = true,
         },
         html = { filetypes = { 'html', 'twig', 'hbs', 'templ' } },
         kotlin_language_server = {},
@@ -762,20 +760,6 @@ require('lazy').setup({
         htmx = {
           filetypes = { 'html', 'go', 'templ' },
         },
-        denols = {
-          root_dir = function(filename)
-            local lspconfig = require 'lspconfig'
-            local denoRootDir = lspconfig.util.root_pattern('deno.json', 'deno.json')(filename)
-            if denoRootDir then
-              -- print('this seems to be a deno project; returning nil so that tsserver does not attach');
-              return denoRootDir
-              -- else
-              -- print('this seems to be a ts project; return root dir based on package.json')
-            end
-
-            return nil
-          end,
-        },
       }
 
       -- Ensure the servers and tools above are installed
@@ -791,6 +775,7 @@ require('lazy').setup({
       local ensure_installed = vim.tbl_keys(servers or {})
       vim.list_extend(ensure_installed, {
         'stylua', -- Used to format Lua code
+        'goimports', -- Used to format Go code
       })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
@@ -835,6 +820,7 @@ require('lazy').setup({
       end,
       formatters_by_ft = {
         lua = { 'stylua' },
+        go = { 'goimports', 'gofmt' },
         -- Conform can also run multiple formatters sequentially
         -- python = { "isort", "black" },
         --
