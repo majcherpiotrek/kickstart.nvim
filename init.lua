@@ -612,6 +612,9 @@ require('lazy').setup({
           --  See `:help K` for why this keymap.
           map('K', vim.lsp.buf.hover, 'Hover Documentation')
 
+          -- Alternative keymap in case K doesn't work
+          map('<leader>k', vim.lsp.buf.hover, 'Hover Documentation (alternative)')
+
           -- WARN: This is not Goto Definition, this is Goto Declaration.
           --  For example, in C this would take you to the header.
           map('gD', vim.lsp.buf.declaration, '[G]oto [D]eclaration')
@@ -737,28 +740,12 @@ require('lazy').setup({
         html = { filetypes = { 'html', 'twig', 'hbs', 'templ' } },
         kotlin_language_server = {},
         jdtls = { filetypes = { 'java', 'kotlin' } },
-        efm = {
-          filetypes = { 'ts', 'tsx', 'lua' },
-          init_options = { documentFormatting = true },
-          settings = {
-            rootMarkers = { '.git/' },
-            languages = {
-              lua = {
-                { formatCommand = 'lua-format -i', formatStdin = true },
-              },
-              typescript = prettier,
-            },
-          },
-        },
         cssls = {
           filetypes = { 'css', 'scss', 'les' },
         },
         tailwindcss = {
           filetypes = { 'css', 'scss', 'less', 'javascriptreact', 'typescriptreact', 'templ' },
           init_options = { userLanguages = { templ = 'html' } },
-        },
-        htmx = {
-          filetypes = { 'html', 'go', 'templ' },
         },
       }
 
@@ -780,6 +767,9 @@ require('lazy').setup({
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
       require('mason-lspconfig').setup {
+        automatic_enable = {
+          exclude = { "htmx" }
+        },
         handlers = {
           function(server_name)
             local server = servers[server_name] or {}
@@ -790,6 +780,12 @@ require('lazy').setup({
             require('lspconfig')[server_name].setup(server)
           end,
         },
+      }
+      
+      -- Manually setup HTMX LSP with custom filetypes to prevent TypeScript attachment
+      require('lspconfig').htmx.setup {
+        filetypes = { 'html', 'templ' },
+        capabilities = capabilities,
       }
     end,
   },
