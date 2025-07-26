@@ -739,13 +739,31 @@ require('lazy').setup({
         },
         html = { filetypes = { 'html', 'twig', 'hbs', 'templ' } },
         kotlin_language_server = {},
-        jdtls = { filetypes = { 'java', 'kotlin' } },
+        kotlin_lsp = {
+          cmd = { 'kotlin-lsp', '--stdio' },
+          filetypes = { 'kotlin', 'kt', 'kts' },
+          root_dir = require('lspconfig.util').root_pattern(
+            'settings.gradle',
+            'settings.gradle.kts',
+            'build.gradle',
+            'build.gradle.kts',
+            'pom.xml',
+            'workspace.json',
+            '.git'
+          ),
+        },
         cssls = {
           filetypes = { 'css', 'scss', 'les' },
         },
         tailwindcss = {
           filetypes = { 'css', 'scss', 'less', 'javascriptreact', 'typescriptreact', 'templ' },
           init_options = { userLanguages = { templ = 'html' } },
+        },
+        eslint = {
+          filetypes = { 'javascript', 'typescript', 'typescriptreact', 'javascriptreact' },
+          settings = {
+            workingDirectory = { mode = 'auto' },
+          },
         },
       }
 
@@ -763,12 +781,13 @@ require('lazy').setup({
       vim.list_extend(ensure_installed, {
         'stylua', -- Used to format Lua code
         'goimports', -- Used to format Go code
+        'eslint-lsp', -- ESLint language server
       })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
       require('mason-lspconfig').setup {
         automatic_enable = {
-          exclude = { "htmx" }
+          exclude = { 'htmx' },
         },
         handlers = {
           function(server_name)
@@ -781,7 +800,7 @@ require('lazy').setup({
           end,
         },
       }
-      
+
       -- Manually setup HTMX LSP with custom filetypes to prevent TypeScript attachment
       require('lspconfig').htmx.setup {
         filetypes = { 'html', 'templ' },
@@ -808,9 +827,11 @@ require('lazy').setup({
         -- Disable "format_on_save lsp_fallback" for languages that don't
         -- have a well standardized coding style. You can add additional
         -- languages here or re-enable it for the disabled ones.
-        local disable_filetypes = { c = true, cpp = true, kotlin = true }
+        local disable_filetypes = { c = true, cpp = true }
+        -- Increase timeout for Kotlin files as ktlint can be slower
+        local timeout = vim.bo[bufnr].filetype == "kotlin" and 2000 or 500
         return {
-          timeout_ms = 500,
+          timeout_ms = timeout,
           lsp_fallback = not disable_filetypes[vim.bo[bufnr].filetype],
         }
       end,
@@ -826,6 +847,7 @@ require('lazy').setup({
         typescriptreact = { 'prettierd', 'prettier', stop_after_first = true },
         json = { 'prettierd', 'prettier', stop_after_first = true },
         templ = { 'templ' },
+        kotlin = { 'ktlint' },
       },
     },
   },
@@ -1161,7 +1183,7 @@ require('lazy').setup({
   --
   -- require 'kickstart.plugins.debug',
   -- require 'kickstart.plugins.indent_line',
-  -- require 'kickstart.plugins.lint',
+  require 'kickstart.plugins.lint',
   require 'kickstart.plugins.autopairs',
   -- require 'kickstart.plugins.neo-tree',
   -- require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
