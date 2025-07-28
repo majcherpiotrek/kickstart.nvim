@@ -738,7 +738,6 @@ require('lazy').setup({
           single_file_support = true,
         },
         html = { filetypes = { 'html', 'twig', 'hbs', 'templ' } },
-        kotlin_language_server = {},
         kotlin_lsp = {
           cmd = { 'kotlin-lsp', '--stdio' },
           filetypes = { 'kotlin', 'kt', 'kts' },
@@ -829,7 +828,7 @@ require('lazy').setup({
         -- languages here or re-enable it for the disabled ones.
         local disable_filetypes = { c = true, cpp = true }
         -- Increase timeout for Kotlin files as ktlint can be slower
-        local timeout = vim.bo[bufnr].filetype == "kotlin" and 2000 or 500
+        local timeout = vim.bo[bufnr].filetype == 'kotlin' and 2000 or 500
         return {
           timeout_ms = timeout,
           lsp_fallback = not disable_filetypes[vim.bo[bufnr].filetype],
