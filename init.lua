@@ -774,6 +774,9 @@ require('lazy').setup({
             workingDirectory = { mode = 'auto' },
           },
         },
+        buf_ls = {
+          filetypes = { 'proto' },
+        },
       }
 
       -- Ensure the servers and tools above are installed
@@ -791,6 +794,7 @@ require('lazy').setup({
         'stylua', -- Used to format Lua code
         'goimports', -- Used to format Go code
         'eslint-lsp', -- ESLint language server
+        'buf', -- Protocol buffer formatter
       })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
@@ -857,6 +861,7 @@ require('lazy').setup({
         json = { 'prettierd', 'prettier', stop_after_first = true },
         templ = { 'templ' },
         kotlin = { 'ktlint' },
+        proto = { 'buf' },
       },
     },
   },
@@ -1146,6 +1151,7 @@ require('lazy').setup({
         'kotlin',
         'java',
         'python',
+        'proto',
       },
       -- Autoinstall languages that are not installed
       auto_install = true,
